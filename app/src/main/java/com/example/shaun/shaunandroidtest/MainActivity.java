@@ -31,18 +31,22 @@ import java.io.UnsupportedEncodingException;
 import java.util.Set;
 import java.util.UUID;
 
+import static android.app.PendingIntent.getActivity;
+
 public class MainActivity extends AppCompatActivity {
     // GUI Components
     public final static String EXTRA_MESSAGE = "com.example.shaun.MESSAGE";
     BluetoothAdapter mBluetoothAdapter;
     private TextView mBluetoothStatus;
     private ListView mDevicesListView;
+    private ListView mChatListView;
+    private String mConnectedDeviceName = null;
     //Array for storing stuff
     private ArrayAdapter<String> mBTArrayAdapter;
     //private BluetoothAdapter mBTAdapter;
     private Button mOnBtn;
     private static final String TAG = "MainActivity";
-
+    private ArrayAdapter<String> mConversationArrayAdapter;
     // Constants that indicate the current connection state
     public static final int STATE_NONE = 0;       // we're doing nothing
     public static final int STATE_LISTEN = 1;     // now listening for incoming connections
@@ -50,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int STATE_CONNECTED = 3;  // now connected to a remote device
     private int mState;
     //private Handler mHandler;
-    Handler mHandler = new Handler();
+    //Handler mHandler = new Handler();
     //private Handler mHandler; // Our main handler that will receive callback notifications
     private ConnectThread mConnectedThread; // bluetooth background worker thread to send and receive data
     private BluetoothSocket mBTSocket = null; // bi-directional client-to-client data path
@@ -89,17 +93,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
+        //mConversationArrayAdapter.add("");
         mOnBtn = (Button) findViewById(R.id.on);
         mBluetoothStatus = (TextView)findViewById(R.id.bluetoothStatus);
-
+        mConversationArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
         mBTArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         //mBTAdapter = BluetoothAdapter.getDefaultAdapter(); // get a handle on the bluetooth radio
         mDevicesListView = (ListView)findViewById(R.id.devicesListView);
         mDevicesListView.setAdapter(mBTArrayAdapter); // assign model to view
         mDevicesListView.setOnItemClickListener(mDeviceClickListener);
-
+        mChatListView = (ListView)findViewById(R.id.chatView);
+        mChatListView.setAdapter(mConversationArrayAdapter);
         // Register for broadcasts when a device is discovered.
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         registerReceiver(mReceiver, filter);
@@ -113,11 +118,60 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void handleMessage(Message msg) {
-        String message = (String) msg.obj; //Extract the string from the Message
-        Log.d(TAG, "MSG: " + message);
-        //....
-    }
+    /**
+     * The Handler that gets information back from the BluetoothChatService
+     */
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            FragmentActivity activity = MainActivity.this;
+            //setSupportActionBar(MainActivity);
+           // getSupportActionBar().setDisplayShowHomeEnabled(true);
+            switch (msg.what) {
+                case MessageConstants.MESSAGE_STATE_CHANGE:
+                    switch (msg.arg1) {
+                        case MainActivity.STATE_CONNECTED:
+                            //setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
+                            mConversationArrayAdapter.clear();
+                            break;
+                        case MainActivity.STATE_CONNECTING:
+                            //setStatus(R.string.title_connecting);
+                            break;
+                        case MainActivity.STATE_LISTEN:
+                        case MainActivity.STATE_NONE:
+                            //setStatus(R.string.title_not_connected);
+                            break;
+                    }
+                    break;
+                case MessageConstants.MESSAGE_WRITE:
+                    byte[] writeBuf = (byte[]) msg.obj;
+                    // construct a string from the buffer
+                    String writeMessage = new String(writeBuf);
+                    mConversationArrayAdapter.add("Me:  " + writeMessage);
+                    break;
+                case MessageConstants.MESSAGE_READ:
+                    byte[] readBuf = (byte[]) msg.obj;
+                    // construct a string from the valid bytes in the buffer
+                    String readMessage = new String(readBuf, 0, msg.arg1);
+                    mConversationArrayAdapter.add(mConnectedDeviceName+ ":  " + readMessage);
+                    break;
+                case MessageConstants.MESSAGE_DEVICE_NAME:
+                    // save the connected device's name
+                    mConnectedDeviceName = msg.getData().getString(MessageConstants.DEVICE_NAME);
+                    if (null != activity) {
+                        Toast.makeText(activity, "Connected to "
+                                + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+                case MessageConstants.MESSAGE_TOAST:
+                    if (null != activity) {
+                        Toast.makeText(activity, msg.getData().getString(MessageConstants.TOAST),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+            }
+        }
+    };
 
     //Methods
     //Bluetooth on clicked
@@ -449,6 +503,7 @@ public class MainActivity extends AppCompatActivity {
             bundle.putString(MessageConstants.DEVICE_NAME, mmDevice.getName());
             msg.setData(bundle);
             mHandler.sendMessage(msg);
+
           // manageMyConnectedSocket(mmSocket);
         }
 
@@ -472,7 +527,7 @@ public class MainActivity extends AppCompatActivity {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;
         private final OutputStream mmOutStream;
-        private byte[] mmBuffer; // mmBuffer store for the stream
+
 
 
         public ConnectedThread(BluetoothSocket socket) {
@@ -495,15 +550,18 @@ public class MainActivity extends AppCompatActivity {
 
             mmInStream = tmpIn;
             mmOutStream = tmpOut;
+            mState = STATE_CONNECTED;
         }
 
         public void run() {
-            mmBuffer = new byte[1024];
+            byte[] mmBuffer = new byte[1024];
+            //mmBuffer = new byte[1024];
             int numBytes; // bytes returned from read()
             String msg ="";
             // Keep listening to the InputStream until an exception occurs.
-            while (true) {
+            while (mState == STATE_CONNECTED) {
                 try {
+                    //mConversationArrayAdapter.clear();
                     // Read from the InputStream.
                     numBytes = mmInStream.read(mmBuffer);
                     //String message = numBytes.toString();
@@ -511,19 +569,25 @@ public class MainActivity extends AppCompatActivity {
                    //String message = new String(mmInStream.read(mmBuffer), "UTF-8");
                     Message readMsg = mHandler.obtainMessage(MessageConstants.MESSAGE_READ, numBytes, -1, mmBuffer);
                     readMsg.sendToTarget();
-                    readMsg.obj = msg; // Put the string into Message, into "obj" field.
+                    //readMsg.obj = msg; // Put the string into Message, into "obj" field.
                     //byte[] writeBuf = (byte[]) readMsg.obj;
                     //msg.setTarget(mHandler); // Set the Handler
                     //msg.sendToTarget(); //Send the message
                     //handleMessage(readMsg);
                     //String readMessage = new String(writeBuf);
+                   // byte[] readBuf = (byte[]) readMsg.obj;
+                    // construct a string from the valid bytes in the buffer
+                    //String readMessage = new String(mmBuffer, "US-ASCII");
+                    //Log.d(TAG, "readMsg:" + readMsg);
+                    //mConversationArrayAdapter.add(readMessage);
+                    //Log.d(TAG, "conversationarray:" + mConversationArrayAdapter);
 
-                    Log.d(TAG, "Message:" + numBytes);
                     //mBluetoothStatus.setText(readMsg.toString());
                 } catch (IOException e) {
                     Log.d(TAG, "Input stream was disconnected", e);
                     break;
                 }
+
             }
         }
 
@@ -534,7 +598,7 @@ public class MainActivity extends AppCompatActivity {
 
                 // Share the sent message with the UI activity.
                 Message writtenMsg = mHandler.obtainMessage(
-                        MessageConstants.MESSAGE_WRITE, -1, -1, mmBuffer);
+                        MessageConstants.MESSAGE_WRITE, -1, -1, bytes);
                 writtenMsg.sendToTarget();
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when sending data", e);
@@ -559,6 +623,8 @@ public class MainActivity extends AppCompatActivity {
                 Log.e(TAG, "Could not close the connect socket", e);
             }
         }
+
+
     }
 
     /** Called when the user clicks the Send button */

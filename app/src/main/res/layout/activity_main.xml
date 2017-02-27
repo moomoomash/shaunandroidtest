@@ -136,7 +136,7 @@
             android:layout_toEndOf="@+id/checkboxLED1" />
 
         <ListView
-            android:layout_width="wrap_content"
+            android:layout_width="168dp"
             android:layout_height="wrap_content"
             android:id="@+id/devicesListView"
             android:choiceMode="singleChoice"
@@ -146,8 +146,18 @@
 
 
 
+
     </LinearLayout>
 
+    <ListView
+        android:layout_width="168dp"
+        android:layout_height="50dp"
+        android:id="@+id/chatView"
+        android:choiceMode="singleChoice"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginEnd="75dp"
+        android:layout_marginBottom="16dp" />
 </RelativeLayout>
 
 
