@@ -54,6 +54,7 @@ public class MainActivity extends AppCompatActivity {
     public static final int STATE_CONNECTING = 2; // now initiating an outgoing connection
     public static final int STATE_CONNECTED = 3;  // now connected to a remote device
     private int mState;
+    private int mNewState;
     //private Handler mHandler;
     //Handler mHandler = new Handler();
     //private Handler mHandler; // Our main handler that will receive callback notifications // bluetooth background worker thread to send and receive data
@@ -72,11 +73,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String NAME_INSECURE = "BluetoothChatInsecure";
 
     public interface MessageConstants {
-//        public static final int MESSAGE_READ = 0;
-//        public static final int MESSAGE_WRITE = 1;
-//        public static final int MESSAGE_TOAST = 2;
-//
-//        // ... (Add other message types here as needed.)
 // Message types sent from the BluetoothChatService Handler
         public static final int MESSAGE_STATE_CHANGE = 1;
         public static final int MESSAGE_READ = 2;
@@ -96,6 +92,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //mConversationArrayAdapter.add("");
+        mNewState= mState;
         mOnBtn = (Button) findViewById(R.id.on);
         mBluetoothStatus = (TextView)findViewById(R.id.bluetoothStatus);
         mConversationArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
@@ -118,6 +115,17 @@ public class MainActivity extends AppCompatActivity {
         }
 
 
+    }
+    /**
+     * Update UI title according to the current state of the chat connection
+     */
+    private synchronized void updateUserInterfaceTitle() {
+        mState = getBTState();
+        Log.d(TAG, "updateUserInterfaceTitle() " + mNewState + " -> " + mState);
+        mNewState = mState;
+
+        // Give the new state to the Handler so the UI Activity can update
+        mHandler.obtainMessage(MessageConstants.MESSAGE_STATE_CHANGE, mNewState, -1).sendToTarget();
     }
     /**
      * Return the current connection state.
@@ -144,15 +152,16 @@ public class MainActivity extends AppCompatActivity {
                 case MessageConstants.MESSAGE_STATE_CHANGE:
                     switch (msg.arg1) {
                         case MainActivity.STATE_CONNECTED:
+                            mBluetoothStatus.setText("Successfully connected to: "+ mConnectedDeviceName);
                             //setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
                             mConversationArrayAdapter.clear();
                             break;
                         case MainActivity.STATE_CONNECTING:
-                            //setStatus(R.string.title_connecting);
+                            mBluetoothStatus.setText("Connection in progress");
                             break;
                         case MainActivity.STATE_LISTEN:
                         case MainActivity.STATE_NONE:
-                            //setStatus(R.string.title_not_connected);
+                            mBluetoothStatus.setText("Disconnected!");
                             break;
                     }
                     break;
@@ -161,12 +170,15 @@ public class MainActivity extends AppCompatActivity {
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
                     mConversationArrayAdapter.add("Me:  " + writeMessage);
+                    mConversationArrayAdapter.notifyDataSetChanged();
                     break;
                 case MessageConstants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
                     mConversationArrayAdapter.add(mConnectedDeviceName+ ":  " + readMessage);
+                    mConversationArrayAdapter.notifyDataSetChanged();
+                    Log.d(TAG, readMessage);
                     Toast.makeText(getApplicationContext(),readMessage, Toast.LENGTH_SHORT).show();
                     break;
                 case MessageConstants.MESSAGE_DEVICE_NAME:
@@ -310,7 +322,28 @@ public class MainActivity extends AppCompatActivity {
         return  device.createRfcommSocketToServiceRecord(BTMODULEUUID);
         //creates secure outgoing connection with BT device using UUID
     }
+    /**
+     * Start the chat service. Specifically start AcceptThread to begin a
+     * session in listening (server) mode. Called by the Activity onResume()
+     */
+    public synchronized void start() {
+        Log.d(TAG, "start");
 
+        // Cancel any thread attempting to make a connection
+        if (mConnectThread != null) {
+            mConnectThread.cancel();
+            mConnectThread = null;
+        }
+
+        // Cancel any thread currently running a connection
+        if (mConnectedThread != null) {
+            mConnectedThread.cancel();
+            mConnectedThread = null;
+        }
+
+        // Update UI title
+        updateUserInterfaceTitle();
+    }
     /**
      * Start the ConnectThread to initiate a connection to a remote device.
      *
@@ -338,7 +371,8 @@ public class MainActivity extends AppCompatActivity {
         mConnectThread = new ConnectThread(device);
         mConnectThread.start();
 
-
+        // Update UI title
+        updateUserInterfaceTitle();
     }
     /**
      * Start the ConnectedThread to begin managing a Bluetooth connection
@@ -385,7 +419,7 @@ public class MainActivity extends AppCompatActivity {
         mHandler.sendMessage(msg);
         setBTState(STATE_CONNECTED);
         // Update UI title
-        //updateUserInterfaceTitle();
+        updateUserInterfaceTitle();
     }
 
 
@@ -434,8 +468,12 @@ public class MainActivity extends AppCompatActivity {
             // The connection attempt succeeded. Perform work associated with
             // the connection in a separate thread.
             //mBluetoothStatus.setText("Connected!");
-            connectStatus=1;
-            mState = STATE_CONNECTED;
+            Message msg = mHandler.obtainMessage(MessageConstants.MESSAGE_DEVICE_NAME);
+            Bundle bundle = new Bundle();
+            bundle.putString(MessageConstants.DEVICE_NAME, mmDevice.getName());
+            msg.setData(bundle);
+            mHandler.sendMessage(msg);
+            setBTState(STATE_CONNECTED);
             if (mState==STATE_CONNECTED) {
                 Log.d(TAG, "CONNECTED to: " + mmDevice);
                 //mBluetoothStatus.setText("Connected to: " +mmDevice);
@@ -445,7 +483,7 @@ public class MainActivity extends AppCompatActivity {
             // Start the connected thread
             connected(mmSocket, mmDevice);
             // Update UI title
-            //updateUserInterfaceTitle();
+            updateUserInterfaceTitle();
         }
 
         // Closes the client socket and causes the thread to finish.
@@ -513,20 +551,6 @@ public class MainActivity extends AppCompatActivity {
                    //String message = new String(mmInStream.read(mmBuffer), "UTF-8");
                     Message readMsg = mHandler.obtainMessage(MessageConstants.MESSAGE_READ, numBytes, -1, mmBuffer);
                     readMsg.sendToTarget();
-                    //readMsg.obj = msg; // Put the string into Message, into "obj" field.
-                    //byte[] writeBuf = (byte[]) readMsg.obj;
-                    //msg.setTarget(mHandler); // Set the Handler
-                    //msg.sendToTarget(); //Send the message
-                    //handleMessage(readMsg);
-                    //String readMessage = new String(writeBuf);
-                   // byte[] readBuf = (byte[]) readMsg.obj;
-                    // construct a string from the valid bytes in the buffer
-                    //String readMessage = new String(mmBuffer, "US-ASCII");
-                    //Log.d(TAG, "readMsg:" + readMsg);
-                    //mConversationArrayAdapter.add(readMessage);
-                    //Log.d(TAG, "conversationarray:" + mConversationArrayAdapter);
-
-                    //mBluetoothStatus.setText(readMsg.toString());
                 } catch (IOException e) {
                     Log.d(TAG, "Input stream was disconnected", e);
                     connectionLost();
@@ -616,10 +640,10 @@ public class MainActivity extends AppCompatActivity {
 
         mState = STATE_NONE;
         // Update UI title
-        //updateUserInterfaceTitle();
+        updateUserInterfaceTitle();
 
         // Start the service over to restart listening mode
-        //MainActivity.start();
+        MainActivity.this.start();
     }
 //        intent.putExtra(EXTRA_MESSAGE, message);
 //        startActivity(intent);
