@@ -1,5 +1,6 @@
 package com.example.shaun.shaunandroidtest;
 
+import com.example.shaun.shaunandroidtest.RobotControl;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -271,6 +272,11 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    public void controller(View view) {
+        //RobotControl RC = new RobotControl();
+        Intent intent = new Intent(this, RobotControl.class);
+        startActivity(intent);
+    }
     // Create a BroadcastReceiver for ACTION_FOUND.
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
