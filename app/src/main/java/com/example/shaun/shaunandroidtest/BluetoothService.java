@@ -42,12 +42,12 @@ public class BluetoothService extends AppCompatActivity {
     private ListView mDevicesListView;
     private ListView mChatListView;
     private String mConnectedDeviceName = null;
-    private MainActivity mChatService = null;
+//    private MainActivity mChatService = null;
     //Array for storing stuff
     private ArrayAdapter<String> mBTArrayAdapter;
     //private BluetoothAdapter mBTAdapter;
     private Button mOnBtn;
-    private static final String TAG = "MainActivity";
+    private static final String TAG = "BluetoothService";
     private ArrayAdapter<String> mConversationArrayAdapter;
     // Constants that indicate the current connection state
     public static final int STATE_NONE = 0;       // we're doing nothing
@@ -72,6 +72,7 @@ public class BluetoothService extends AppCompatActivity {
     // Name for the SDP record when creating server socket
     private static final String NAME_SECURE = "BluetoothChatSecure";
     private static final String NAME_INSECURE = "BluetoothChatInsecure";
+
 
     public interface MessageConstants {
         // Message types sent from the BluetoothChatService Handler
@@ -114,8 +115,6 @@ public class BluetoothService extends AppCompatActivity {
         else {
             mBluetoothStatus.setText("Bluetooth OFF");
         }
-
-
     }
     /**
      * Update UI title according to the current state of the chat connection
@@ -152,16 +151,16 @@ public class BluetoothService extends AppCompatActivity {
             switch (msg.what) {
                 case MessageConstants.MESSAGE_STATE_CHANGE:
                     switch (msg.arg1) {
-                        case MainActivity.STATE_CONNECTED:
+                        case BluetoothService.STATE_CONNECTED:
                             mBluetoothStatus.setText("Successfully connected to: "+ mConnectedDeviceName);
                             //setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
                             mConversationArrayAdapter.clear();
                             break;
-                        case MainActivity.STATE_CONNECTING:
+                        case BluetoothService.STATE_CONNECTING:
                             mBluetoothStatus.setText("Connection in progress");
                             break;
-                        case MainActivity.STATE_LISTEN:
-                        case MainActivity.STATE_NONE:
+                        case BluetoothService.STATE_LISTEN:
+                        case BluetoothService.STATE_NONE:
                             mBluetoothStatus.setText("Disconnected!");
                             break;
                     }
@@ -279,11 +278,6 @@ public class BluetoothService extends AppCompatActivity {
         }
     }
 
-    public void controller(View view) {
-        //RobotControl RC = new RobotControl();
-        Intent intent = new Intent(this, RobotControl.class);
-        startActivity(intent);
-    }
     // Create a BroadcastReceiver for ACTION_FOUND.
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
         public void onReceive(Context context, Intent intent) {
@@ -625,7 +619,7 @@ public class BluetoothService extends AppCompatActivity {
         r.write(out);
     }
     /** Called when the user clicks the Send button */
-    public void sendMessage(View view) {
+    public  void sendMessage(View view) {
         // Check that there's actually something to send
         //Intent intent = new Intent(this, DisplayMessageActivity.class);
         byte[] send = null;
