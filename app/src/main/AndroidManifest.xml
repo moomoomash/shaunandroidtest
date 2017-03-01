@@ -20,6 +20,8 @@
         <activity android:name=".DisplayMessageActivity"></activity>
         <activity android:name=".RobotControl">
         </activity>
+        <activity android:name=".BluetoothService"></activity>
+        <activity android:name=".BluetoothUI"></activity>a
     </application>
 
 </manifest>

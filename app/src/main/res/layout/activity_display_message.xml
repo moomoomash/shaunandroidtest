@@ -10,4 +10,13 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.shaun.shaunandroidtest.DisplayMessageActivity">
 
+    <Button
+        android:text="Button"
+        android:layout_width="500dp"
+        android:layout_height="1000dp"
+        android:id="@+id/bluetoothsetting"
+        android:onClick="startBTServ"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="51dp" />
 </RelativeLayout>
