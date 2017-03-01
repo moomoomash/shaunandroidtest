@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
         public static final int MESSAGE_WRITE = 3;
         public static final int MESSAGE_DEVICE_NAME = 4;
         public static final int MESSAGE_TOAST = 5;
-
+        public static final int MESSAGE_CONTROL = 6;
         // Key names received from the BluetoothChatService Handler
         public static final String DEVICE_NAME = "device_name";
         public static final String TOAST = "toast";
@@ -196,6 +196,13 @@ public class MainActivity extends AppCompatActivity {
                                 Toast.LENGTH_SHORT).show();
                     }
                     break;
+//                case MessageConstants.MESSAGE_CONTROL:
+//                    byte[] controlBuf = (byte[]) msg.obj;
+//                    // construct a string from the buffer
+//                    String controlMessage = new String(controlBuf);
+//                    mConversationArrayAdapter.add("Me:  " + controlMessage);
+//                    mConversationArrayAdapter.notifyDataSetChanged();
+//                    break;
             }
         }
     };
@@ -562,16 +569,12 @@ public class MainActivity extends AppCompatActivity {
                     connectionLost();
                     break;
                 }
-
             }
         }
-
         // Call this from the main activity to send data to the remote device.
         public void write(byte[] bytes) {
             try {
-
                 mmOutStream.write(bytes);
-
                 // Share the sent message with the UI activity.
 //                Message writtenMsg = mHandler.obtainMessage(
 //                        MessageConstants.MESSAGE_WRITE, -1, -1, bytes);
