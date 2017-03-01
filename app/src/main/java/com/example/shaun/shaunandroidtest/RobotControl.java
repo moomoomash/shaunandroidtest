@@ -1,18 +1,18 @@
 package com.example.shaun.shaunandroidtest;
 
-import android.content.Intent;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.FragmentActivity;
+import android.util.Log;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.TextView;
+import android.widget.EditText;
 
-public class MainActivity extends AppCompatActivity {
-    RobotControl rc = new RobotControl();
+/**
+ * Created by Hypnotic on 28/2/2017.
+ */
 
-    //public BluetoothService btServ = BluetoothUI.BLUETOOTH_SERVICE;
+public class RobotControl extends AppCompatActivity{
     private Button left;
     private Button right;
     private Button forward;
@@ -22,23 +22,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_controller);
-        setupControl();
-        BluetoothUI BTui = new BluetoothUI();
-//        if (savedInstanceState == null) {
-//            FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-//            BluetoothUI fragment = new BluetoothUI();
-//            transaction.replace(R.id.activity_controller, fragment);
-//            transaction.commit();
-//        }
-    }
 
-    public String getControl(){
-        return control;
-        //ctrlMsg(control);
-    }
-
-    public void setupControl(){
-        // Turn left
+// Turn left
         left = (Button) findViewById(R.id.ButtonLeft);
         left.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -46,7 +31,6 @@ public class MainActivity extends AppCompatActivity {
                 //sendMessage(msg);
                 //outputFeedback("MovingL");
                 control="a";
-                sendControl(control);
                 //endControl(control);
             }
         });
@@ -56,7 +40,6 @@ public class MainActivity extends AppCompatActivity {
         right.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 control="d";
-                sendControl(control);
                 //sendControl(control);
                 //String msg = "d";
                 //sendMessage(msg);
@@ -72,7 +55,6 @@ public class MainActivity extends AppCompatActivity {
 
             public void onClick(View v) {
                 control="s";
-                sendControl(control);
                 //sendControl(control);
                 //String msg = "s";
                 //sendMessage(msg);
@@ -86,7 +68,6 @@ public class MainActivity extends AppCompatActivity {
         forward.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 control="w";
-                sendControl(control);
                 //String msg = "w";
                 //sendMessage(msg);
                 //("MovingF");
@@ -98,21 +79,21 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    public void sendControl(String input){
-        if (input.length() > 0) {
-            // Get the message bytes and tell the BluetoothChatService to write
-            //this.write(send);
-            BTui.write(input.getBytes());
-            btServ.write("lolll".getBytes());
-        }
+  public String getControl(){
+        return control;
+        //ctrlMsg(control);
     }
 
-    public void startBTServ(View view){
-        //BluetoothService BTServ = new BluetoothService();
-//        Intent intent = new Intent(this, BluetoothService.class);
-//        startActivity(intent);
-//        BTui.start()
-        Intent intent = new Intent(this, BluetoothService.class);
-        startActivity(intent);
-    }
+//    public void ctrlMsg(String msg) {
+//        // Check that there's actually something to send
+//        //Intent intent = new Intent(this, DisplayMessageActivity.class);
+//        byte[] send = null;
+//        String message = msg;
+//        if (message.length() > 0) {
+//            // Get the message bytes and tell the BluetoothChatService to write
+//            send = message.getBytes();
+//            MainActivity.write(send);
+//            //mChatService.write(send);
+//        }
+//    }
 }
