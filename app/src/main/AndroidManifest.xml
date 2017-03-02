@@ -10,18 +10,25 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.AppCompat">
+        android:theme="@style/Theme.AppCompat"
+        android:name=".AppServiceController">
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".DisplayMessageActivity"></activity>
-        <activity android:name=".RobotControl">
-        </activity>
-        <activity android:name=".BluetoothService"></activity>
-        <activity android:name=".BluetoothUI"></activity>a
+        <activity android:name=".DisplayMessageActivity" />
+        <activity android:name=".RobotControl"></activity>
+        <!--<activity android:name=".BluetoothService" />-->
+        <activity android:name=".BluetoothUI" />
+
+        <service
+            android:name=".MyService"
+            android:enabled="true"
+            android:exported="true"></service>
+
     </application>
 
 </manifest>

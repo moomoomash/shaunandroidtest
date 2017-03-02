@@ -46,7 +46,7 @@ public class BluetoothUI extends AppCompatActivity{
     //Array for storing stuff
     private ArrayAdapter<String> mBTArrayAdapter;
     private ArrayAdapter<String> mConversationArrayAdapter;
-    public BluetoothService BTServ = new BluetoothService();
+//    public BluetoothService BTServ = new BluetoothService();
     // Intent request codes
     private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
     private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
@@ -68,10 +68,14 @@ public class BluetoothUI extends AppCompatActivity{
         public static final String TOAST = "toast";
 
     }
-
+    private MyService BTServ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
+        BTServ = AppServiceController.getInstance().getService();// <--added
+
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //mConversationArrayAdapter.add("");
@@ -236,9 +240,10 @@ public class BluetoothUI extends AppCompatActivity{
 
 
     public void controller(View view) {
-        //RobotControl RC = new RobotControl();
-        Intent intent = new Intent(this, MainActivity.class);
-        startActivity(intent);
+//        //RobotControl RC = new RobotControl();
+//        Intent intent = new Intent(this, MainActivity.class);
+//        startActivity(intent);
+        finish();
     }
 
 //        intent.putExtra(EXTRA_MESSAGE, message);
